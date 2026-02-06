@@ -1,0 +1,51 @@
+# n-Party Sealed-Bid Auction (First-Price) with Shamir Secret Sharing
+# Party 0 is the seller (reserve price). Parties 1..N are bidders.
+# Only party 0 learns the winner ID and winning bid.
+# Each other party learns only whether they won (1) or lost (0).
+# Usage: compile.py auction_n -- <n>
+#        ./shamir-party.x -p <id> -N <n> auction_n-<n>
+
+from Compiler.types import sint, Array
+from Compiler.library import print_ln, print_ln_to
+import sys
+
+# Get number of parties from command line
+if len(program.args) > 1:
+    n_parties = int(program.args[1])
+else:
+    n_parties = 3
+    print_ln('No party count specified, using default: 3')
+
+if n_parties < 3:
+    print_ln('Error: Need at least 3 parties for Shamir secret sharing')
+    raise Exception('Shamir requires at least 3 parties')
+
+print_ln('Starting %s-party sealed-bid auction (Shamir)', n_parties)
+
+# Each party inputs their bid (party 0 = seller's reserve price)
+bids = Array(n_parties, sint)
+for i in range(n_parties):
+    bids[i] = sint.get_input_from(i)
+    print_ln('Party %s: bid received', i)
+
+# Find maximum bid and winner
+max_bid = bids[0]
+winner = sint(0)
+
+for i in range(1, n_parties):
+    is_higher = bids[i] > max_bid
+    max_bid = is_higher.if_else(bids[i], max_bid)
+    winner = is_higher.if_else(sint(i), winner)
+
+# Reveal winner and winning bid ONLY to party 0 (seller)
+winner_id = winner.reveal_to(0)
+winning_bid = max_bid.reveal_to(0)
+
+print_ln_to(0, 'Auction complete!')
+print_ln_to(0, 'Winner: Party %s', winner_id)
+print_ln_to(0, 'Winning bid: %s', winning_bid)
+
+# Each party privately learns only whether they won
+for party in range(n_parties):
+    am_i_winner = (winner == sint(party)).reveal_to(party)
+    print_ln_to(party, 'You won: %s', am_i_winner)
