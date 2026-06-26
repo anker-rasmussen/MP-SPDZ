@@ -11,6 +11,10 @@ keys/*
 ##############################
 CONFIG.mine
 config_mine.py
+# Exception: this fork's CONFIG.mine pins Boost to ./pinned-boost via rpath
+# (see comments in the file). It is required to reproduce the pinned build,
+# so it must be tracked despite the blanket ignore above.
+!CONFIG.mine
 
 # Temporary files #
 ###################
@@ -57,6 +61,12 @@ Programs/Functions
 *.x
 *.o
 *.so
+# Exception: vendored, version-pinned Boost shared libraries. These are
+# committed build artifacts loaded at runtime via the rpath baked in by
+# CONFIG.mine ($ORIGIN/pinned-boost), so a system Boost soname bump does
+# not break the prebuilt MP-SPDZ binaries.
+!pinned-boost/*.so
+!pinned-boost/*.so.*
 *.pyc
 *.bc
 *.sch
