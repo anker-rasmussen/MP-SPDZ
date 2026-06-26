@@ -1,0 +1,12 @@
+# Pin Boost to the vendored copies in ./pinned-boost so a system Boost
+# upgrade (Arch rolling release bumps the soname, e.g. 1.90 -> 1.91) does
+# not break the prebuilt MP-SPDZ binaries. $ORIGIN is resolved by the
+# dynamic loader to the directory of the binary/library at runtime, so this
+# keeps working even when the repo is moved or rsync'd to another host.
+# MY_LDLIBS is the intended user hook: CONFIG defines `LDLIBS = ... $(MY_LDLIBS) ...`,
+# so appending here survives that assignment (a plain `LDLIBS +=` does not).
+# --disable-new-dtags emits DT_RPATH (transitive) instead of DT_RUNPATH
+# (non-transitive), so $ORIGIN/pinned-boost also satisfies boost's *own*
+# inter-library deps (e.g. iostreams -> regex, random), not just the
+# binary's direct boost links.
+MY_LDLIBS += -Wl,--disable-new-dtags -Wl,-rpath,'$$ORIGIN/pinned-boost'
